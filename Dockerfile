@@ -123,16 +123,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 
 # RUN USE_SETUPCFG=0 HDF5_INCDIR=/usr/include/hdf5/serial HDF5_LIBDIR=/usr/lib/x86_64-linux-gnu/hdf5/serial pip install git+https://github.com/Unidata/netcdf4-python
 
-RUN pip install --upgrade matplotlib numpy scipy && \
-    pip install --upgrade pyproj && \
+RUN pip install --upgrade pyproj && \
     pip install --upgrade netcdf4
 
 #
 # These ones are needed for cartopy / imaging / geometry stuff
 #
 
-RUN pip install \
-              appdirs packaging \
+RUN pip install appdirs packaging \
               runipy \
               ipython
 
