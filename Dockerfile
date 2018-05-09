@@ -36,6 +36,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     liblapack-dev \
     libscalapack-mpi-dev \
     libhdf5-serial-dev \
+    libhdf5-openmpi-dev \
     libnetcdf-dev \
     libfreetype6-dev \
     libpng12-dev \
@@ -64,7 +65,25 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 # Better to build the latest versions than use the old apt-gotten ones
 # I'm putting this here as it takes time and ought to be cached before the
 # more ephemeral parts of this image.
-
+RUN pip install --no-cache-dir setuptools wheel && \
+    pip install --no-cache-dir packaging \
+        appdirs \
+        numpy \
+        jupyter \
+        plotly \
+        mpi4py \
+        matplotlib \
+        runipy \
+        pillow \
+        pyvirtualdisplay \
+        ipyparallel \
+        pint \
+        sphinx \
+        sphinx_rtd_theme \
+        sphinxcontrib-napoleon \
+        mock \
+        scipy && \
+    CC=mpicc HDF5_MPI="ON" HDF5_DIR=/usr/lib/x86_64-linux-gnu/hdf5/openmpi/ pip install --no-cache-dir --no-binary=h5py h5py
 
 # (proj4 is buggered up everywhere in apt-get ... so build a known-to-work version from source)
 #
@@ -79,7 +98,6 @@ RUN cd /usr/local && \
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python-gdal \
         python-pil  \
-        python-h5py \
         libxml2-dev \
         python-lxml \
         libgeos-dev
