@@ -147,8 +147,8 @@ RUN pip install  \
 
 RUN pip install --upgrade cartopy
 
-RUN jupyter contrib nbextension install --system && \
-    jupyter nbextensions_configurator enable --system
+#RUN jupyter contrib nbextension install --system && \
+#    jupyter nbextensions_configurator enable --system
 
 EXPOSE 8888
 
@@ -158,7 +158,7 @@ EXPOSE 8888
 RUN curl -L https://github.com/krallin/tini/releases/download/v0.6.0/tini > tini && \
     echo "d5ed732199c36a1189320e6c4859f0169e950692f451c03e7854243b95f4234b *tini" | sha256sum -c - && \
     mv tini /usr/local/bin/tini && \
-chmod +x /usr/local/bin/tini
+    chmod +x /usr/local/bin/tini
 
 #ENV TINI_VERSION v0.8.4
 #ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
