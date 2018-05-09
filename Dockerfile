@@ -123,7 +123,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 
 # RUN USE_SETUPCFG=0 HDF5_INCDIR=/usr/include/hdf5/serial HDF5_LIBDIR=/usr/lib/x86_64-linux-gnu/hdf5/serial pip install git+https://github.com/Unidata/netcdf4-python
 
-RUN pip install matplotlib numpy scipy --upgrade && \
+RUN pip install --upgrade matplotlib numpy scipy && \
     pip install --upgrade pyproj && \
     pip install --upgrade netcdf4
 
@@ -152,10 +152,16 @@ RUN pip install --upgrade cartopy
 RUN jupyter contrib nbextension install --system && \
     jupyter nbextensions_configurator enable --system
 
-# Add Tini
-
 EXPOSE 8888
 
-ENV TINI_VERSION v0.8.4
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
-RUN chmod +x /usr/local/bin/tini
+# Add Tini
+# Install Tini.. this is required because CMD (below) doesn't play nice with notebooks for some reason: https
+#NOTE: If you are using Docker 1.13 or greater, Tini is included in Docker itself. This includes all versions of Docker CE. To enable Tini, just pass the --init flag to docker run.
+RUN curl -L https://github.com/krallin/tini/releases/download/v0.6.0/tini > tini && \
+    echo "d5ed732199c36a1189320e6c4859f0169e950692f451c03e7854243b95f4234b *tini" | sha256sum -c - && \
+    mv tini /usr/local/bin/tini && \
+chmod +x /usr/local/bin/tini
+
+#ENV TINI_VERSION v0.8.4
+#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
+#RUN chmod +x /usr/local/bin/tini
