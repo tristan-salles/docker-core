@@ -42,6 +42,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libpng12-dev \
     libtiff-dev \
     libxft-dev \
+    petsc-dev \
     xvfb \
     freeglut3 \
     freeglut3-dev \
@@ -61,12 +62,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     python-sympy \
     python-nose \
     pkg-config
+    
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  petsc-dev \
+  libhdf5-openmpi-dev \
+  xauth
+  
+RUN pip install --upgrade pip
 
-# Better to build the latest versions than use the old apt-gotten ones
-# I'm putting this here as it takes time and ought to be cached before the
-# more ephemeral parts of this image.
-RUN pip install setuptools wheel && \
-    pip install packaging \
+RUN pip install --no-cache-dir setuptools wheel && \
+    pip install --no-cache-dir packaging \
         appdirs \
         numpy \
         jupyter \
@@ -75,15 +80,26 @@ RUN pip install setuptools wheel && \
         matplotlib \
         runipy \
         pillow \
+        mpi4py \
         pyvirtualdisplay \
         ipyparallel \
         pint \
         sphinx \
         sphinx_rtd_theme \
         sphinxcontrib-napoleon \
-        mock \
-        scipy && \
+        mock      
+        
+RUN pip install --no-cache-dir scipy && \
     CC=mpicc HDF5_MPI="ON" HDF5_DIR=/usr/lib/x86_64-linux-gnu/hdf5/openmpi/ pip install --no-cache-dir --no-binary=h5py h5py
+
+RUN pip install mkdocs mkdocs-bootswatch pymdown-extensions\
+                stripy \
+                litho1pt0 \
+                petsc4py
+                
+# Better to build the latest versions than use the old apt-gotten ones
+# I'm putting this here as it takes time and ought to be cached before the
+# more ephemeral parts of this image.
 
 # (proj4 is buggered up everywhere in apt-get ... so build a known-to-work version from source)
 #
@@ -107,8 +123,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 
 # RUN USE_SETUPCFG=0 HDF5_INCDIR=/usr/include/hdf5/serial HDF5_LIBDIR=/usr/lib/x86_64-linux-gnu/hdf5/serial pip install git+https://github.com/Unidata/netcdf4-python
 
-RUN pip install --upgrade pip && \
-    pip install matplotlib numpy scipy --upgrade && \
+RUN pip install matplotlib numpy scipy --upgrade && \
     pip install --upgrade pyproj && \
     pip install --upgrade netcdf4
 
