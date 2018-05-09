@@ -65,8 +65,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 # Better to build the latest versions than use the old apt-gotten ones
 # I'm putting this here as it takes time and ought to be cached before the
 # more ephemeral parts of this image.
-RUN pip install --no-cache-dir setuptools wheel && \
-    pip install --no-cache-dir packaging \
+RUN pip install setuptools wheel && \
+    pip install packaging \
         appdirs \
         numpy \
         jupyter \
