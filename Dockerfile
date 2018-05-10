@@ -1,103 +1,111 @@
-FROM debian:jessie
-
-# Should lock that down to a specific version !
+FROM ubuntu:16.04
 
 MAINTAINER Tristan Salles
 
-## the update is fine but very slow ... keep it separated so it doesn't
-## get run again and break the cache. The later parts of this build
-## may be sensitive to later versions being picked up in the install phase.
+RUN apt-get update -y && \
+          apt-get install -y --no-install-recommends apt-utils
 
-RUN apt-get update -y ;
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          autoconf \
+          automake \
+          libtool
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --fix-missing \
         bash-completion \
-        build-essential
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --fix-missing \
+        build-essential \
+        cmake \
+        gfortran \
+        gcc \
+        xauth \
         git \
-        python \
+        git-core \
+        libblas-dev \
         python-dev \
         python-pip \
-        ruby-full \
-        ssh \
-        curl \
-        rsync \
-        vim \
-        less \
-        gfortran \
-        cython \
-        cmake \
-        zip
+        mpich \
+        mercurial \
+        libspatialindex-dev \
+        libmpich-dev \
+        liblapack-dev \
+        libopenblas-dev \
+        wget \
+        zip \
+        openssh-server \
+        python-setuptools \
+        python-numpy \
+        python-scipy \
+        python-matplotlib \
+        python-pandas \
+        python-sympy \
+        python-nose \
+        pkg-config
 
-## Compile petsc
-RUN cd /usr/local && \
-    git clone https://bitbucket.org/petsc/petsc petsc && \
-    cd petsc && \
-    export PETSC_VERSION=3.8.4 && \
-    git checkout tags/v$PETSC_VERSION && \
-    ./configure --CFLAGS='-O3' --CXXFLAGS='-O3' --FFLAGS='-O3' --with-debugging=no --download-openmpi=yes --download-hdf5=yes --download-fblaslapack=yes --download-metis=yes --download-parmetis=yes && \
-    make PETSC_DIR=/usr/local/petsc PETSC_ARCH=arch-linux2-c-opt all
+RUN pip install six
 
-## These are for the full python - scipy stack
+RUN mkdir /live && \
+         mkdir /live/lib
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    libopenblas-dev \
-    liblapack-dev \
-    libscalapack-mpi-dev \
-    libhdf5-serial-dev \
-    petsc-dev \
-    libhdf5-openmpi-dev \
-    xauth \
-    libnetcdf-dev \
-    libfreetype6-dev \
-    libpng12-dev \
-    libtiff-dev \
-    libxft-dev \
-    xvfb \
-    freeglut3 \
-    freeglut3-dev \
-    libgl1-mesa-dri \
-    libgl1-mesa-glx \
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswscale-dev \
-    libfreetype6-dev \
-    python-numpy \
-    python-scipy \
-    python-matplotlib \
-    python-pandas \
-    python-sympy \
-    python-nose \
-    pkg-config
+RUN cd /live/lib && \
+        git clone https://bitbucket.org/petsc/petsc.git && \
+        cd petsc && \
+        export PETSC_VERSION=3.8.4 && \
+        git checkout tags/v$PETSC_VERSION
 
-# Better to build the latest versions than use the old apt-gotten ones
-# I'm putting this here as it takes time and ought to be cached before the
-# more ephemeral parts of this image.
+RUN cd /live/lib/petsc && \
+        ./configure --CFLAGS='-O3' --CXXFLAGS='-O3' --FFLAGS='-O3' --with-debugging=no  --download-hdf5 --download-fblaslapack --download-ctetgen --download-metis=yes --download-parmetis=yes --download-triangle
 
+RUN cd /live/lib/petsc && \
+        make  PETSC_DIR=/live/lib/petsc PETSC_ARCH=arch-linux2-c-opt all
 
-# (proj4 is buggered up everywhere in apt-get ... so build a known-to-work version from source)
-#
-RUN cd /usr/local && \
-    curl http://download.osgeo.org/proj/proj-4.9.3.tar.gz > proj-4.9.3.tar.gz && \
-    tar -xzf proj-4.9.3.tar.gz && \
-    cd proj-4.9.3 && \
-    ./configure && \
-    make all && \
-    make install
+RUN cd /live/lib/petsc && \
+        make PETSC_DIR=/live/lib/petsc PETSC_ARCH=arch-linux2-c-opt test && \
+        make PETSC_DIR=/live/lib/petsc PETSC_ARCH=arch-linux2-c-opt streams NPMAX=4
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python-gdal \
-        python-pil  \
-        python-h5py \
-        libxml2-dev \
-        python-lxml \
-        libgeos-dev
+RUN pip install --upgrade pip
+RUN pip install numpy mpi4py
 
-## The recent netcdf4 / pythonlibrary stuff doesn't work properly with the default search paths etc
-## here is a fix which builds the repo version. Hoping that pip install or apt-get install will work again soon
-RUN pip install --upgrade pip && \
-    pip install matplotlib numpy scipy --upgrade && \
-    pip install --upgrade pyproj && \
-    pip install --upgrade netcdf4
+RUN cd /live/lib/petsc && \
+      make PETSC_DIR=/live/lib/petsc PETSC_ARCH=arch-linux2-c-opt check
+
+RUN cd /live/lib/ && \
+        wget https://bitbucket.org/petsc/petsc4py/downloads/petsc4py-3.8.1.tar.gz && \
+        tar -xzf petsc4py-3.8.1.tar.gz && \
+        cd petsc4py-3.8.1 && \
+        export PETSC_DIR=/live/lib/petsc && \
+        export PETSC_ARCH=arch-linux2-c-opt && \
+        python setup.py install
+
+RUN pip install cython
+
+RUN cd /live/lib/ && \
+          wget https://pypi.python.org/packages/source/h/h5py/h5py-2.5.0.tar.gz && \
+          tar zxvf h5py-2.5.0.tar.gz && \
+          cd h5py-2.5.0/ && \
+          python setup.py configure --hdf5=/live/lib/petsc/arch-linux2-c-opt/ && \
+          env CFLAGS=-I/usr/lib/mpich/include python setup.py install
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get remove -y --no-install-recommends python-pip
+RUN pip install stripy \
+                litho1pt0
+
+#ENV TINI_VERSION v0.8.4
+#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
+#RUN chmod +x /usr/local/bin/tini
+
+# expose notebook port and server port
+#EXPOSE 8888
+
+#ENV LD_LIBRARY_PATH=/live/share/paraLands
+
+#ENTRYPOINT ["/usr/local/bin/tini", "--"]
+
+RUN pip install enum34
+RUN pip install jupyter markupsafe zmq singledispatch backports_abc certifi jsonschema ipyparallel path.py
+
+#RUN mkdir /live/share
+#VOLUME /live/share
+
+#WORKDIR  /live
+
+#CMD jupyter notebook --ip=0.0.0.0 --no-browser \
+#    --NotebookApp.token='' --allow-root  --NotebookApp.iopub_data_rate_limit=1.0e10
