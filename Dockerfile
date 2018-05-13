@@ -50,9 +50,12 @@ RUN cd /live/lib && \
         wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar  && \
         tar -xvf hdf5-1.10.1.tar && \
         cd hdf5-1.10.1 && \
-        CC=mpicc.mpich FC=mpif90.mpich ./configure --prefix=/usr/local/hdf5 --enable-parallel --enable-fortran &&\
-        make &&\
-        make install
+        CC=mpicc.mpich FC=mpif90.mpich ./configure --prefix=/usr/local/hdf5 --enable-parallel --enable-fortran && \
+        make && \
+        make install && \
+        cd /live/lib && \
+        rm -rf hdf5-1.10.1 && \
+        rm -rf hdf5-1.10.1.tar
         
 RUN cd /live/lib && \
         git clone https://bitbucket.org/petsc/petsc.git && \
@@ -85,36 +88,17 @@ RUN cd /live/lib/ && \
         python setup.py install
 
 RUN pip install cython
-
-RUN cd /live/lib/ && \
-          wget https://pypi.python.org/packages/source/h/h5py/h5py-2.5.0.tar.gz && \
-          tar zxvf h5py-2.5.0.tar.gz && \
-          cd h5py-2.5.0/ && \
-          python setup.py configure --hdf5=/usr/local/hdf5/ && \
-          env CFLAGS=-I/usr/lib/mpich/include python setup.py install
+RUN CC="mpicc.mpich" HDF5_MPI="ON" HDF5_DIR=/usr/local/hdf5 pip install --no-binary=h5py h5py 
+#RUN cd /live/lib/ && \
+#          wget https://pypi.python.org/packages/source/h/h5py/h5py-2.5.0.tar.gz && \
+#          tar zxvf h5py-2.5.0.tar.gz && \
+#          cd h5py-2.5.0/ && \
+#          python setup.py configure --hdf5=/usr/local/hdf5/ && \
+#          env CFLAGS=-I/usr/lib/mpich/include python setup.py install
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get remove -y --no-install-recommends python-pip
 RUN pip install stripy \
                 litho1pt0
 
-#ENV TINI_VERSION v0.8.4
-#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/local/bin/tini
-#RUN chmod +x /usr/local/bin/tini
-
-# expose notebook port and server port
-#EXPOSE 8888
-
-#ENV LD_LIBRARY_PATH=/live/share/paraLands
-
-#ENTRYPOINT ["/usr/local/bin/tini", "--"]
-
 RUN pip install enum34
 RUN pip install jupyter markupsafe zmq singledispatch backports_abc certifi jsonschema ipyparallel path.py
-
-#RUN mkdir /live/share
-#VOLUME /live/share
-
-#WORKDIR  /live
-
-#CMD jupyter notebook --ip=0.0.0.0 --no-browser \
-#    --NotebookApp.token='' --allow-root  --NotebookApp.iopub_data_rate_limit=1.0e10
