@@ -50,7 +50,9 @@ RUN cd /live/lib && \
         wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar  && \
         tar -xvf hdf5-1.10.1.tar && \
         cd hdf5-1.10.1 && \
-        CC=mpicc.mpich FC=mpif90.mpich ./configure --prefix=/usr/local/hdf5 --enable-parallel --enable-fortran
+        CC=mpicc.mpich FC=mpif90.mpich ./configure --prefix=/usr/local/hdf5 --enable-parallel --enable-fortran &&\
+        make &&\
+        make install
         
 RUN cd /live/lib && \
         git clone https://bitbucket.org/petsc/petsc.git && \
